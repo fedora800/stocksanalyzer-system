@@ -146,6 +146,30 @@ pipeline {
     }
 
 
+
+    stage("Docker Build"){
+        steps{
+            script{
+               withDockerRegistry(credentialsId: 'cred_dockerhub', toolName: 'docker'){   
+                   sh "docker build -t amazon-clone ."
+                   sh "docker tag amazon-clone deepsharma/amazon-clone:latest "
+                }
+            }
+        }
+    }
+
+
+    stage("Docker Push"){
+        steps{
+            script{
+               withDockerRegistry(credentialsId: 'cred_dockerhub', toolName: 'docker'){   
+                   sh "docker push deepsharma/amazon-clone:latest "
+                }
+            }
+        }
+    }
+
+
   } // end-stages
 
 } // end-pipeline
