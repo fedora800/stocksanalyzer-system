@@ -62,7 +62,7 @@ pipeline {
   stages {
 
         // stage-initialization
-        stage('Initialization') { NOT-TESTED
+        stage('Initialization') { // NOT-TESTED
             environment { 
                    JOB_TIME = sh (returnStdout: true, script: "date '+%F %T'").trim()
             }   
@@ -73,7 +73,7 @@ pipeline {
         }   
 
       // will help us find all the env variables pre-defined for us to use in jenkinsfile
-      stage('List All the Jenkins Environment Variables"){ NOT-TESTED
+      stage('List All the Jenkins Environment Variables') {  //NOT-TESTED
         steps {
           PrintStageName()
           sh "printenv | sort"
@@ -100,7 +100,7 @@ pipeline {
       }
 
     // stage set or use local environment variables in different sections
-    stage("Set Env Variables for this Stage - 1") { NOT-TESTED
+    stage("Set Env Variables for this Stage - 1") { //NOT-TESTED
       environment {
         USER_PATH = "/home/joe"
       }
@@ -140,6 +140,30 @@ pipeline {
                 // Fetch the username and password token from credentials id and assign values to local variables
                 withCredentials([usernamePassword(credentialsId: 'cred_dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_TOKEN')]) {
                     sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN'
+                }
+            }
+        }
+    }
+
+
+
+    stage("Docker Build"){
+        steps{
+            script{
+               withDockerRegistry(credentialsId: 'cred_dockerhub', toolName: 'docker'){   
+                   sh "docker build -t amazon-clone ."
+                   sh "docker tag amazon-clone deepsharma/amazon-clone:latest "
+                }
+            }
+        }
+    }
+
+
+    stage("Docker Push"){
+        steps{
+            script{
+               withDockerRegistry(credentialsId: 'cred_dockerhub', toolName: 'docker'){   
+                   sh "docker push deepsharma/amazon-clone:latest "
                 }
             }
         }
