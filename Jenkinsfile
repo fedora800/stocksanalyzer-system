@@ -16,6 +16,7 @@ pipeline {
       GITHUB_REPO_BRANCH = "main"
 
       DOCKER_REGISTRY_URL = "https://registry.hub.docker.com"
+      DOCKERHUB_USERNAME = "fedora800"
       DOCKERHUB_CREDENTIALS = "cred_dockerhub"
       DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
       DOCKER_IMAGE_TAG_2 = "latest"
@@ -79,21 +80,15 @@ pipeline {
           }
       }
 
-    stage("Build a Docker Image") {     //NOT TESTED
+
+    stage("Build Docker Image - Using Shell commands") {                
       steps {
         PrintStageName()
-          script {
-            docker.withRegistry($DOCKER_REGISTRY_URL, $DOCKERHUB_CREDENTIALS) {
-            //docker.withRegistry('https://registry.hub.docker.com', 'j_dockerhub_credentials') {
-            // Build the image locally
-            def myDockerImage1 = docker.build("${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${env.DOCKER_IMAGE_TAG_1}")
-            def myDockerImage2 = docker.build("${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${env.DOCKER_IMAGE_TAG_2}")
-          }
+        script {
+          sh "docker build --tag ${env.DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_1} --tag ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} -f src/frontend/Dockerfile"
         }
       }
     }
-
-
 
 
     stage('Docker Login using Jenkins Credentials ID') {
