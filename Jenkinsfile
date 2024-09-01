@@ -102,12 +102,17 @@ pipeline {
             // Fetch the username and password token from credentials id and assign values to local variables
             withCredentials([usernamePassword(credentialsId: 'cred_dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_TOKEN')]) {
               // Securely perform Docker login using local environment variables
-              sh 'echo $DOCKER_TOKEN | sudo docker login -u $DOCKER_USERNAME --password-stdin'
+              // triple single (''') quotes for sh step to ensure that multi-line commands and variable expansions are handled properly by the shell.
+              sh '''
+              echo "$DOCKER_TOKEN" | sudo docker login -u "$DOCKER_USERNAME" --password-stdin
+              '''
             }
           }
           script {
-            sh 'echo "Builds available to push for this app :'
-            sh 'sudo docker image ls  | egrep "REPO|${APP_NAME}"'
+            sh '''
+            echo "Builds available to push for this app:"
+            sudo docker image ls | egrep "REPO|${APP_NAME}"
+            '''
           }
         }
     }
