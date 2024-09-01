@@ -109,6 +109,16 @@ pipeline {
     }
 
 
+    stage("Push Docker Image - Using Shell commands") {
+      steps {
+        PrintStageName()
+        script {
+          sh "sudo docker push ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_1}"
+          sh "sudo docker push ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2}"
+        }
+      }
+    }
+
 
       stage('Deploy') {
           steps {
