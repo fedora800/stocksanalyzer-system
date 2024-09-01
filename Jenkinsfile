@@ -8,19 +8,19 @@ def PrintStageName() {
 }
 
 
-environment {
-
-  GITHUB_REPO_URL = "https://github.com/fedora800/scratch_project.git"
-  GITHUB_REPO_BRANCH = "main"
-
-  DOCKER_REGISTRY_URL = "https://registry.hub.docker.com"
-  DOCKERHUB_CREDENTIALS = "cred_dockerhub"
-  DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
-  DOCKER_IMAGE_TAG_2 = "latest"
-}
-
 pipeline {
     agent any
+    
+    environment {
+      GITHUB_REPO_URL = "https://github.com/fedora800/stocksanalyzer-system.git"
+      GITHUB_REPO_BRANCH = "main"
+
+      DOCKER_REGISTRY_URL = "https://registry.hub.docker.com"
+      DOCKERHUB_CREDENTIALS = "cred_dockerhub"
+      DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
+      DOCKER_IMAGE_TAG_2 = "latest"
+    }
+    
     stages {
 
       stage('Initialization') {
@@ -51,8 +51,8 @@ pipeline {
         script {
           try {
             // Pull code from a GitHub repository
-            //git branch: 'main', url: 'https://github.com/fedora800/scratch_project.git'
-            git branch: GITHUB_REPO_BRANCH, credentialsId: GITHUB_CREDENTIALS, url: GITHUB_REPO_URL
+            //example - git branch: 'main', url: 'https://github.com/fedora800/scratch_project.git'
+            git branch: GITHUB_REPO_BRANCH, url: GITHUB_REPO_URL
           }
           catch (err) {
             echo err
@@ -112,5 +112,6 @@ pipeline {
   } // end-stages
 
 } // end-pipeline
+
 
 
