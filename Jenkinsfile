@@ -10,6 +10,9 @@ def PrintStageName() {
 
 environment {
 
+  GITHUB_REPO_URL = "https://github.com/fedora800/scratch_project.git"
+  GITHUB_REPO_BRANCH = "main"
+
   DOCKER_REGISTRY_URL = "https://registry.hub.docker.com"
   DOCKERHUB_CREDENTIALS = "cred_dockerhub"
   DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
@@ -42,20 +45,32 @@ pipeline {
       }
 
 
-      stage('Checkout') {
-          steps {
-            PrintStageName()
-              // Checkout the code from GitHub
-              checkout scm
+    stage('Checkout Code from git PUBLIC repo on github.com')  {    // TESTED-AND-WORKS
+      steps {
+        PrintStageName()
+        script {
+          try {
+            // Pull code from a GitHub repository
+            //git branch: 'main', url: 'https://github.com/fedora800/scratch_project.git'
+            git branch: GITHUB_REPO_BRANCH, credentialsId: GITHUB_CREDENTIALS, url: GITHUB_REPO_URL
           }
+          catch (err) {
+            echo err
+          }
+        }
+      }
+    }
+
+      stage('Build Python Code - Frontend') {
+        steps {
+          PrintStageName()
+          sh '''
+          cd src/frontend
+          pip install -r requirements.txt
+          '''
+        }
       }
 
-      stage('Build') {
-          steps {
-              // Build the project (e.g., using Maven, Gradle, or npm)
-              echo 'Building the application...'
-          }
-      }
 
       stage('Test') {
           steps {
