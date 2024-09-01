@@ -98,13 +98,17 @@ pipeline {
     stage('Docker Login using Jenkins Credentials ID') {
         steps {
           PrintStageName()
-            script {
-                // Fetch the username and password token from credentials id and assign values to local variables
-                withCredentials([usernamePassword(credentialsId: 'cred_dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_TOKEN')]) {
-                  // Securely perform Docker login using local environment variables
-                  sh 'echo $DOCKER_TOKEN | docker login -u $DOCKER_USERNAME --password-stdin'
-                }
+          script {
+            // Fetch the username and password token from credentials id and assign values to local variables
+            withCredentials([usernamePassword(credentialsId: 'cred_dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_TOKEN')]) {
+              // Securely perform Docker login using local environment variables
+              sh 'echo $DOCKER_TOKEN | sudo docker login -u $DOCKER_USERNAME --password-stdin'
             }
+          }
+          script {
+            sh 'echo "Builds available to push for this app :'
+            sh 'sudo docker image ls  | egrep "REPO|${APP_NAME}"
+          }
         }
     }
 
