@@ -20,6 +20,8 @@ pipeline {
       DOCKERHUB_CREDENTIALS = "cred_dockerhub"
       DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
       DOCKER_IMAGE_TAG_2 = "latest"
+ 
+      APP_NAME = "stocksanalyzer-system-app"
     }
     
     stages {
