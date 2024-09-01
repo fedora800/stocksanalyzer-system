@@ -107,7 +107,7 @@ pipeline {
           }
           script {
             sh 'echo "Builds available to push for this app :'
-            sh 'sudo docker image ls  | egrep "REPO|${APP_NAME}"
+            sh 'sudo docker image ls  | egrep "REPO|${APP_NAME}"'
           }
         }
     }
