@@ -79,6 +79,23 @@ pipeline {
           }
       }
 
+    stage("Build a Docker Image") {     //NOT TESTED
+      steps {
+        PrintStageName()
+          script {
+            docker.withRegistry($DOCKER_REGISTRY_URL, $DOCKERHUB_CREDENTIALS) {
+            //docker.withRegistry('https://registry.hub.docker.com', 'j_dockerhub_credentials') {
+            // Build the image locally
+            def myDockerImage1 = docker.build("${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${env.DOCKER_IMAGE_TAG_1}")
+            def myDockerImage2 = docker.build("${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${env.DOCKER_IMAGE_TAG_2}")
+          }
+        }
+      }
+    }
+
+
+
+
     stage('Docker Login using Jenkins Credentials ID') {
         steps {
           PrintStageName()
