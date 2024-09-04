@@ -22,8 +22,8 @@ pipeline {
       DOCKER_IMAGE_TAG_2 = "latest"
  
       APP_NAME = "basic-nginx-docker-app"
-      APP_VERSION_PREFIX = "1.0"            // currently hardcoding till i find solution to maybe get from build config or somewhere else
-      APP_VERSION = ${APP_VERSION_PREFIX}.${env.BUILD_NUMBER}      // Concatenate using Groovy string interpolation
+      APP_VERSION_PREFIX = "v1.0"            // currently hardcoding till i find solution to maybe get from build config or somewhere else
+      APP_VERSION = "${APP_VERSION_PREFIX}.${env.BUILD_NUMBER}"      // Concatenate using Groovy string interpolation
 
     }
     
@@ -74,6 +74,7 @@ pipeline {
           cd src/frontend
           pip install -r requirements.txt
           '''
+          echo "Application Version: ${env.APP_VERSION}"
         }
       }
 
