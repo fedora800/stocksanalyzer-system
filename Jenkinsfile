@@ -21,7 +21,10 @@ pipeline {
       DOCKER_IMAGE_TAG_1 = "${env.BUILD_NUMBER}"
       DOCKER_IMAGE_TAG_2 = "latest"
  
-      APP_NAME = "stocksanalyzer-system-app"
+      APP_NAME = "basic-nginx-docker-app"
+      APP_VERSION_PREFIX = "1.0"            // currently hardcoding till i find solution to maybe get from build config or somewhere else
+      APP_VERSION = ${APP_VERSION_PREFIX}.${env.BUILD_NUMBER}      // Concatenate using Groovy string interpolation
+
     }
     
     stages {
@@ -88,8 +91,10 @@ pipeline {
         PrintStageName()
         script {
 //            sh echo -e "e[33m THIS IS NOT WORKING, SKIPPING FOR NOW ....e[0m"
-          sh "sudo docker build -f src/frontend/Dockerfile --tag ${env.DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_1} --tag ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} src/frontend"
-
+          sh """
+             sudo docker build -f src/frontend/Dockerfile  --build-arg APP_VERSION=${env.APP_VERSION} \
+             --tag ${env.DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_1} --tag ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} src/frontend
+          """
         }
       }
     }
