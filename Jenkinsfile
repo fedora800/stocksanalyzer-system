@@ -15,7 +15,7 @@ pipeline {
       GITHUB_REPO_URL = "https://github.com/fedora800/stocksanalyzer-system.git"
       GITHUB_REPO_BRANCH = "main"
 
-      APP_NAME = "frontend-app"
+      APP_NAME = "stocksanalyzer-frontend-app"
       APP_VERSION_PREFIX = "1.0"            // currently hardcoding till i find solution to maybe get from build config or somewhere else
       APP_VERSION = "${APP_VERSION_PREFIX}.${env.BUILD_NUMBER}"      // Concatenate using Groovy string interpolation
  
@@ -24,6 +24,8 @@ pipeline {
       DOCKERHUB_CREDENTIALS = "cred_dockerhub"
       DOCKER_IMAGE_TAG_1 = "${env.APP_VERSION}"
       DOCKER_IMAGE_TAG_2 = "latest"
+      DOCKER_CONTAINER_PORT = "8501"
+      DOCKER_PUBLISHED_PORT = "80"
 
     }
     
@@ -135,6 +137,32 @@ pipeline {
       }
     }
 
+
+    stage('Run Docker Container') {
+            steps {
+                script {
+                    PrintStageName()
+                    try {
+                        // Stop and remove any existing container with the same name
+                        sh """
+                            if [ \$(docker ps -q -f name=${env.APP_ENV}) ]; then
+                                docker stop ${env.APP_ENV}
+                                docker rm ${env.APP_ENV}
+                            fi
+                        """
+
+                        // Run the Docker container
+                        sh """
+                            docker run -d --name ${env.APP_ENV} \
+                            -p ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKER_IMAGE}
+                        """
+                    } catch (Exception e) {
+                        echo "Failed to run Docker container: ${e}"
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+      }
 
       stage('Deploy') {
           steps {
