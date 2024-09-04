@@ -51,7 +51,7 @@ pipeline {
       }
 
 
-    stage('Checkout Code from git PUBLIC repo on github.com')  {    // TESTED-AND-WORKS
+    stage('Checkout Code from git PUBLIC repo on github.com')  {
       steps {
         PrintStageName()
         script {
@@ -87,18 +87,19 @@ pipeline {
       }
 
 
-    stage("Build Docker Image - Using Shell commands") {                
+    stage("Build Docker Image with version passed as argument- Using Shell commands") { 
       steps {
         PrintStageName()
         script {
 //            sh echo -e "e[33m THIS IS NOT WORKING, SKIPPING FOR NOW ....e[0m"
           sh """
              sudo docker build -f src/frontend/Dockerfile  --build-arg APP_VERSION=${env.APP_VERSION} \
-             --tag ${env.DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_1} --tag ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} src/frontend
+             --tag ${env.DOCKERHUB_USERNAME}/${env.APP_VERSION}:${DOCKER_IMAGE_TAG_1} --tag ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} src/frontend
           """
         }
       }
     }
+
 
 
     stage('Docker Login using Jenkins Credentials ID') {
