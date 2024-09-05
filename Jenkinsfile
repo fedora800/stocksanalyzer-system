@@ -168,21 +168,23 @@ pipeline {
 
 
       stage('Connect to Kubernetes cluster using kubeconfig and verify by listing nodes and pods') {
-        script {
-          PrintStageName()
+        steps {
+          script {
+            PrintStageName()
             // Using kubeconfig
             withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-            //When the pipeline reaches this withCredentials block, Jenkins:
-            //Creates a temporary file on the Jenkins agent where the pipeline is running.
-            //Writes the contents of the kubeconfig file to this temporary file.
-            //Assigns the full path of this temporary file to the environment variable, KUBECONFIG in this case
-            //Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available
-            //and points to the temporary kubeconfig file. This allows tools like kubectl to look up resources
+              //When the pipeline reaches this withCredentials block, Jenkins:
+              //Creates a temporary file on the Jenkins agent where the pipeline is running.
+              //Writes the contents of the kubeconfig file to this temporary file.
+              //Assigns the full path of this temporary file to the environment variable, KUBECONFIG in this case
+              //Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available
+              //and points to the temporary kubeconfig file. This allows tools like kubectl to look up resources
               sh """
               kubectl get nodes -o wide
               kubectl get pods -o wide
               """
             }
+          }
         }
       }
 
