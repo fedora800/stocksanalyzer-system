@@ -157,9 +157,7 @@ pipeline {
                            --publish ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} \
                            ${env.APP_NAME} 
                         """
-                        // sudo docker run -d --name null --publish 80:8501 fedora800/stocksanalyzer-frontend-app:latest stocksanalyzer-frontend-app
-                        // 051d2d130a3dc056846d07c7f4962380d225a5a137791c32c7d4978925188019
-
+                        // sudo docker run -d --name stocksanalyzer-frontend-app --publish 80:8501 fedora800/stocksanalyzer-frontend-app:latest stocksanalyzer-frontend-app
                     } catch (Exception e) {
                         echo "Failed to run Docker container: ${e}"
                         currentBuild.result = 'FAILURE'
