@@ -167,12 +167,6 @@ pipeline {
       }
 
 
-Temporary File Assignment:
-
-
-Environment Variable Usage:
-
-    Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available and points to the temporary kubeconfig file. This allows tools like kubectl to use the Kubernetes context defined in that file for operations like apply, get, delete, etc.
       stage('Connect to Kubernetes cluster using kubeconfig and verify by listing nodes and pods') {
         script {
           PrintStageName()
