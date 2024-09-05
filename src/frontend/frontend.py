@@ -5,7 +5,7 @@ import streamlit as st
 def main():
     app_version = os.getenv('APP_VERSION')
     st.write('Welcome to Streamlit in Docker')
-    st.write('APP VERSION = ', app_version)
+    st.write('APP_VERSION = ', app_version)
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,7 @@
 FROM python:3.9-slim
 
+ARG APP_VERSION
+
 WORKDIR /app
 
 COPY requirements.txt ./requirements.txt
@@ -7,6 +9,8 @@ COPY requirements.txt ./requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY . .
+
+ENV APP_VERSION=${APP_VERSION}
 
 EXPOSE 8501
 
