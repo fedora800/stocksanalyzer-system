@@ -151,19 +151,45 @@ pipeline {
                             fi
                         """
 
-                        // Run the Docker container
-                        sh """
-                           sudo docker run -d --name ${env.APP_NAME} \
-                           --publish ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} \
-                           ${env.APP_NAME} 
-                        """
-                        // sudo docker run -d --name stocksanalyzer-frontend-app --publish 80:8501 fedora800/stocksanalyzer-frontend-app:latest stocksanalyzer-frontend-app
+//                        // Run the Docker container
+//                        sh """
+//                           sudo docker run -d --name ${env.APP_NAME} \
+//                           --publish ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} \
+//                           ${env.APP_NAME} 
+//                        """
+//                        // sudo docker run -d --name stocksanalyzer-frontend-app --publish 80:8501 fedora800/stocksanalyzer-frontend-app:latest stocksanalyzer-frontend-app
                     } catch (Exception e) {
                         echo "Failed to run Docker container: ${e}"
                         currentBuild.result = 'FAILURE'
                     }
                 }
             }
+      }
+
+
+Temporary File Assignment:
+
+
+Environment Variable Usage:
+
+    Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available and points to the temporary kubeconfig file. This allows tools like kubectl to use the Kubernetes context defined in that file for operations like apply, get, delete, etc.
+      stage('Connect to Kubernetes cluster using kubeconfig and verify by listing nodes and pods') {
+        script {
+          PrintStageName()
+            // Using kubeconfig
+            //withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+            //When the pipeline reaches this withCredentials block, Jenkins:
+            //Creates a temporary file on the Jenkins agent where the pipeline is running.
+            //Writes the contents of the kubeconfig file to this temporary file.
+            //Assigns the full path of this temporary file to the environment variable, KUBECONFIG in this case
+            //Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available
+            //and points to the temporary kubeconfig file. This allows tools like kubectl to look up resources
+              sh """
+              kubectl get nodes -o wide
+              kubectl get pods -o wide
+              """
+            }
+        }
       }
 
       stage('Deploy') {
