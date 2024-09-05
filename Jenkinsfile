@@ -145,16 +145,17 @@ pipeline {
                     try {
                         // Stop and remove any existing container with the same name
                         sh """
-                            if [ \$(docker ps -q -f name=${env.APP_ENV}) ]; then
-                                docker stop ${env.APP_ENV}
-                                docker rm ${env.APP_ENV}
+                            if [ \$(sudo docker ps -q -f name=${env.APP_NAME}) ]; then
+                                sudo docker stop ${env.APP_NAME}
+                                sudo docker rm ${env.APP_NAME}
                             fi
                         """
 
                         // Run the Docker container
                         sh """
-                            docker run -d --name ${env.APP_ENV} \
-                            -p ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKER_IMAGE}
+                           sudo docker run -d --name ${env.APP_ENV} \
+                           --publish ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} \
+                           ${env.APP_NAME} 
                         """
                     } catch (Exception e) {
                         echo "Failed to run Docker container: ${e}"
