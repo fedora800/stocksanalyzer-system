@@ -171,7 +171,7 @@ pipeline {
         script {
           PrintStageName()
             // Using kubeconfig
-            //withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+            withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
             //When the pipeline reaches this withCredentials block, Jenkins:
             //Creates a temporary file on the Jenkins agent where the pipeline is running.
             //Writes the contents of the kubeconfig file to this temporary file.
