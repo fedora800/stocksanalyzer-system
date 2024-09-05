@@ -145,9 +145,9 @@ pipeline {
                     try {
                         // Stop and remove any existing container with the same name
                         sh """
-                            if [ \$(sudo docker ps -q -f name=${env.APP_NAME}) ]; then
+                            if [ \$(sudo docker container ls -a -f name=${env.APP_NAME} -q) ]; then
                                 sudo docker stop ${env.APP_NAME}
-                                sudo docker rm ${env.APP_NAME}
+                                sudo docker rm -f ${env.APP_NAME}
                             fi
                         """
 
