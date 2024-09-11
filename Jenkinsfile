@@ -87,14 +87,6 @@ pipeline {
     }
 
 
-    stage('Test') {
-        steps {
-            // Run tests (e.g., unit tests, integration tests)
-            echo 'Running tests...'
-        }
-    }
-
-
   stage("Build Docker Image with version passed as argument- Using Shell commands") { 
     steps {
       PrintStageName()
@@ -198,6 +190,7 @@ pipeline {
     stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {  // NOT-TESTED
       steps {
         script {
+          PrintStageName()
           // Clone the GitOps repository
           echo 'Cloning the GitOps repository...'
           sh """
