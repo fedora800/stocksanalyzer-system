@@ -61,6 +61,8 @@ pipeline {
 
             // Use Jenkins credentials to access the repository
             withCredentials([usernamePassword(credentialsId: env.APP_GIT_REPO_CREDENTIALS, passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
+              echo "VAR_USER: ${env.VAR_USER}"
+              echo "VAR_PAT: ${env.VAR_PAT}"
               //below is not going to work as this variable is the complete URL itself, so will need to change the variable if we want to use it
               //git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@${env.APP_GIT_REPO_URL}"
               git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git"
