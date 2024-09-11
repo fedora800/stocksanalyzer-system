@@ -239,7 +239,7 @@ pipeline {
           echo 'Updating YAML files...'
           sh """
           cd gitops-repo
-          sed -i 's/image: my-app:.*/image: my-app:${BUILD_NUMBER}/g' deployment.yaml
+//          sed -i 's/image: my-app:.*/image: my-app:${BUILD_NUMBER}/g' deployment.yaml
           """
 
           // Commit and push the changes back to the GitOps repo
