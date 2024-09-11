@@ -229,8 +229,9 @@ pipeline {
                     url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/gitops-stocksanalyzer-system.git")
           }
 
-//          sh """
- //         git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
+/*
+          sh """
+          git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
           cd gitops-repo
           """
 
@@ -251,6 +252,7 @@ pipeline {
           git commit -m "Update deployment YAML with build ${BUILD_NUMBER}"
           git push https://${env.APP_GITOPS_CREDENTIALS_ID}@${APP_GITOPS_REPO_URL} ${APP_GITOPS_BRANCH}
           """
+*/
         }
       }
     }
