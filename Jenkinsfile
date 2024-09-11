@@ -16,6 +16,12 @@ pipeline {
     APP_GIT_REPO_BRANCH = "main"
     APP_GIT_REPO_CREDENTIALS = "cred-github-fedora800-PAT"
 
+    APP_GITOPS_REPO_URL = 'https://github.com/your-username/gitops-stocksanalyzer-system.git' 
+    APP_GITOPS_BRANCH = 'main'
+    APP_GITOPS_CREDENTIALS_ID = 'cred-github-fedora800-PAT'
+
+
+
       APP_NAME = "stocksanalyzer-frontend-app"
       APP_VERSION_PREFIX = "1.0"            // currently hardcoding till i find solution to maybe get from build config or somewhere else
       APP_VERSION = "${APP_VERSION_PREFIX}.${env.BUILD_NUMBER}"      // Concatenate using Groovy string interpolation
@@ -54,37 +60,18 @@ pipeline {
     }
 
 
-   stage('Clone Repo') {
-      steps {
-         script {
-            PrintStageName()  // Print the name of the current stage
-           git(
-               url: 'https://github.com/fedora800/stocksanalyzer-system.git',
-               branch: 'main',
-               credentialsId: 'cred-github-fedora800-PAT'
-           )
-         }
-      }
-   }
-
-
     stage('Checkout Code from git PRIVATE repo on github.com')  {
       steps {
         PrintStageName()
         script {
           try {
-
             // Use Jenkins credentials to access the repository
             withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
               echo "VAR_USER: ${env.VAR_USER}"
               echo "VAR_PAT: ${env.VAR_PAT}"
               //below is not going to work as this variable is the complete URL itself, so will need to change the variable if we want to use it
               //git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@${env.APP_GIT_REPO_URL}"
-              git(
-                  branch: 'main',
-                  credentialsId: "cred-github-fedora800-PAT",
-                  url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git"
-              )
+              git( branch: 'main', credentialsId: "cred-github-fedora800-PAT", url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git")
             }
           }  catch (Exception e) {
             echo "An error occurred: ${e.message}"
@@ -95,31 +82,6 @@ pipeline {
       }
     }
 
-/*
-    stage('Checkout Code from git PRIVATE repo on github.com')  {
-      steps {
-        PrintStageName()
-        script {
-          try {
-
-            // Use Jenkins credentials to access the repository
-            withCredentials([usernamePassword(credentialsId: env.APP_GIT_REPO_CREDENTIALS, passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
-              echo "VAR_USER: ${env.VAR_USER}"
-              echo "VAR_PAT: ${env.VAR_PAT}"
-              //below is not going to work as this variable is the complete URL itself, so will need to change the variable if we want to use it
-              //git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@${env.APP_GIT_REPO_URL}"
-              git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git"
-            }
-          }  catch (Exception e) {
-            echo "An error occurred: ${e.message}"
-            // Fail the stage and stop the pipeline
-            error("Stopping pipeline due to error in this stage.")
-          }
-        }
-      }
-    }
-
-*/
 
     stage('Build Python Code - Frontend') {
       steps {
@@ -233,14 +195,42 @@ pipeline {
     }
 
 
+    stage('Checkout Code from git PRIVATE repo on github.com')  {
+      steps {
+        PrintStageName()
+        script {
+          try {
+            // Use Jenkins credentials to access the repository
+            withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
+              echo "VAR_USER: ${env.VAR_USER}"
+              echo "VAR_PAT: ${env.VAR_PAT}"
+              //below is not going to work as this variable is the complete URL itself, so will need to change the variable if we want to use it
+              //git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@${env.APP_GIT_REPO_URL}"
+              git( branch: 'main', credentialsId: "cred-github-fedora800-PAT", url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git")
+            }
+          }  catch (Exception e) {
+            echo "An error occurred: ${e.message}"
+            // Fail the stage and stop the pipeline
+            error("Stopping pipeline due to error in this stage.")
+          }
+        }
+      }
+    }
+
+
     stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {  // NOT-TESTED
       steps {
         script {
           PrintStageName()
           // Clone the GitOps repository
           echo 'Cloning the GitOps repository...'
-          sh """
-          git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
+          withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
+            git( branch: 'main', credentialsId: "cred-github-fedora800-PAT", 
+                    url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/gitops-stocksanalyzer-system.git")
+          }
+
+//          sh """
+ //         git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
           cd gitops-repo
           """
 
