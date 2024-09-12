@@ -258,14 +258,14 @@ pipeline {
           echo 'Updating YAML files...'
           sh '''
           echo "Now updating kubernetes-manifests/frontend/dpl-frontend.yaml"
+          cd kubernetes-manifests/frontend
           pwd
           ls -l
-          cd kubernetes-manifests/frontend
           echo "Before image change :"
-          grep "image: "dpl-frontend.yaml
+          grep "image: " dpl-frontend.yaml
           sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g' dpl-frontend.yaml
           echo "After image change :"
-          grep "image: "dpl-frontend.yaml
+          grep "image: " dpl-frontend.yaml
           '''
 
 /*
