@@ -253,14 +253,20 @@ pipeline {
           git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
           cd gitops-repo
           """
-
-          // Update YAML files as needed (this is an example; adjust accordingly)
+*/
+          // Update requisite YAML files 
           echo 'Updating YAML files...'
           sh """
-          cd gitops-repo
-//          sed -i 's#image: my-app:.*#image: my-app:${BUILD_NUMBER}#g' deployment.yaml
+          echo "Now updating kubernetes-manifests/frontend/dpl-frontend.yaml"
+          cd kubernetes-manifests/frontend
+          echo "Before image change :"
+          grep "image: "dpl-frontend.yaml
+          sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g' dpl-frontend.yaml
+          echo "After image change :"
+          grep "image: "dpl-frontend.yaml
           """
 
+/*
           // Commit and push the changes back to the GitOps repo
           echo 'Committing and pushing changes to GitOps repository...'
           sh """
