@@ -14,7 +14,7 @@ pipeline {
   environment {
     APP_GIT_REPO_URL = "https://github.com/fedora800/stocksanalyzer-system.git"
     APP_GIT_REPO_BRANCH = "main"
-    APP_GIT_REPO_CREDENTIALS = "cred-github-fedora800-PAT"
+    APP_GIT_REPO_CREDENTIALS_ID = "cred-github-fedora800-PAT"
 
     APP_GITOPS_REPO_URL = 'https://github.com/your-username/gitops-stocksanalyzer-system.git' 
     APP_GITOPS_BRANCH = 'main'
@@ -60,6 +60,24 @@ pipeline {
     }
 
 
+    stage('Pull Code from git PUBLIC repo')  {
+      steps {
+        PrintStageName()
+        script {
+          try {
+            // Pull code from a GitHub repository
+            //git branch: 'main', url: 'https://github.com/fedora800/scratch_project.git'
+            git branch: APP_GIT_REPO_BRANCH, credentialsId: APP_GIT_REPO_CREDENTIALS_ID, url: APP_GIT_REPO_URL
+          }
+          catch (err) {
+            echo err
+          }
+        }
+      }
+    }
+
+
+/*  -- NOT WORKING -- unable to proceed once it receives the githook, some sort of access problem ----
     stage('Checkout Code from git PRIVATE repo on github.com')  {
       steps {
         PrintStageName()
@@ -81,6 +99,7 @@ pipeline {
         }
       }
     }
+*/
 
 
     stage('Build Python Code - Frontend') {
