@@ -244,8 +244,8 @@ pipeline {
           // Clone the GitOps repository
           echo 'Cloning the GitOps repository...'
           withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
-            git( branch: 'main', credentialsId: "cred-github-fedora800-PAT", 
-                    url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/gitops-stocksanalyzer-system.git")
+          // use the Git URL without credentials. they are still passed securely using the credentialsId parameter. Jenkins will handle authentication securely using its internal mechanisms (GIT_ASKPASS). This avoids insecure Groovy string interpolation while still providing the necessary credentials.
+            git branch: 'main', credentialsId: "cred-github-fedora800-PAT", url: "https://github.com/fedora800/gitops-stocksanalyzer-system.git"
           }
 
 /*
@@ -284,11 +284,31 @@ pipeline {
 
 
     stage('Cleanup') {
-        steps {
-            // Clean up temporary files, containers, etc.
-            echo 'Cleaning up...'
+      steps {
+        // Clean up temporary files, containers, etc.
+        echo 'Cleaning up...'
+
+        script {
+              PrintStageName()  // Assuming you have a custom function for this
+              echo 'Cleaning up old Docker images...'
+  
+              // This will remove all dangling images (images with no tags)
+              sh 'docker image prune -f'
+  
+              // Optionally, remove specific images older than a certain number of days (e.g., 30 days)
+              sh '''
+              OLD_IMAGES=$(docker images --filter "before=${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${DOCKER_IMAGE_TAG_1}" --quiet)
+              if [ ! -z "$OLD_IMAGES" ]; then
+                  echo "Deleting old Docker images..."
+                  echo "$OLD_IMAGES" | xargs docker rmi -f
+              else
+                  echo "No old Docker images to delete."
+              fi
+              '''
         }
+      }
     }
+
 
   } // end-stages
 
