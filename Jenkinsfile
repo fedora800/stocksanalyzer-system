@@ -256,15 +256,17 @@ pipeline {
 */
           // Update requisite YAML files 
           echo 'Updating YAML files...'
-          sh """
+          sh '''
           echo "Now updating kubernetes-manifests/frontend/dpl-frontend.yaml"
+          pwd
+          ls -l
           cd kubernetes-manifests/frontend
           echo "Before image change :"
           grep "image: "dpl-frontend.yaml
           sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g' dpl-frontend.yaml
           echo "After image change :"
           grep "image: "dpl-frontend.yaml
-          """
+          '''
 
 /*
           // Commit and push the changes back to the GitOps repo
