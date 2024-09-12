@@ -263,7 +263,8 @@ pipeline {
           ls -l
           echo "Before image change :"
           grep "image: " dpl-frontend.yaml
-          sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g' dpl-frontend.yaml
+          echo "env.BUILD_NUMBER  = ${env.BUILD_NUMBER}"
+          sed -i "s#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g" dpl-frontend.yaml
           echo "After image change :"
           grep "image: " dpl-frontend.yaml
           '''
@@ -295,14 +296,14 @@ pipeline {
               echo 'Cleaning up old Docker images...'
   
               // This will remove all dangling images (images with no tags)
-              sh 'docker image prune -f'
+              sh 'sudo docker image prune -f'
   
               // Optionally, remove specific images older than a certain number of days (e.g., 30 days)
               sh '''
-              OLD_IMAGES=$(docker images --filter "before=${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${DOCKER_IMAGE_TAG_1}" --quiet)
+              OLD_IMAGES=$(sudo docker images --filter "before=${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${DOCKER_IMAGE_TAG_1}" --quiet)
               if [ ! -z "$OLD_IMAGES" ]; then
                   echo "Deleting old Docker images..."
-                  echo "$OLD_IMAGES" | xargs docker rmi -f
+                  echo "$OLD_IMAGES" | xargs sudo docker rmi -f
               else
                   echo "No old Docker images to delete."
               fi
