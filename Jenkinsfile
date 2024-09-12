@@ -255,8 +255,9 @@ pipeline {
           """
 */
           // Update requisite YAML files 
+          // Must use Groovy string interpolation (${}) inside a double-quoted Groovy string (""").
           echo 'Updating YAML files...'
-          sh '''
+          sh """
           echo "Now updating kubernetes-manifests/frontend/dpl-frontend.yaml"
           cd kubernetes-manifests/frontend
           pwd
@@ -267,7 +268,10 @@ pipeline {
           sed -i "s#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g" dpl-frontend.yaml
           echo "After image change :"
           grep "image: " dpl-frontend.yaml
-          '''
+          """
+//                    def buildNumber = env.BUILD_NUMBER
+//                    sh "sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${buildNumber}#g' dpl-frontend.yaml"
+
 
 /*
           // Commit and push the changes back to the GitOps repo
