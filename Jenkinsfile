@@ -290,30 +290,55 @@ pipeline {
     }
 
 
-    stage('Cleanup') {
+    stage('Cleaning up old Docker images')  {    // CURRENTLY, its not printing FINAL REMOVE_LIST, though that variable is getting done properly in loop
       steps {
         // Clean up temporary files, containers, etc.
         echo 'Cleaning up...'
 
         script {
-              PrintStageName()  // Assuming you have a custom function for this
-              echo 'Cleaning up old Docker images...'
+          PrintStageName()  
   
-              // This will remove all dangling images (images with no tags)
-              sh 'sudo docker image prune -f'
+          // This will remove all dangling images (images with no tags)
+          sh "sudo docker image prune -f"
   
-              // Optionally, remove specific images older than a certain number of days (e.g., 30 days)
-              sh '''
-              OLD_IMAGES=$(sudo docker images --filter "before=${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${DOCKER_IMAGE_TAG_1}" --quiet)
-              if [ ! -z "$OLD_IMAGES" ]; then
-                  echo "Deleting old Docker images..."
-                  echo "$OLD_IMAGES" | xargs sudo docker rmi -f
-              else
-                  echo "No old Docker images to delete."
-              fi
-              '''
+          // Remove specific images older than a specified number of days
+          sh '''
+            DAYS_OLD=30
+
+            # Get current date in seconds since epoch
+            current_date=$(date +%F)
+
+            REMOVE_LIST=""
+            # Convert current date to epoch time format
+            current_date_epoch=$(date -d "$current_date" +%s)
+            # List images and filter based on creation date
+            sudo docker images --format "{{.ID}} {{.Repository}} {{.Tag}} {{.CreatedAt}}" | while read -r id repo tag created_at; do
+                # Extract date part from created_at and remove timezone info
+                formatted_date=$(echo "$created_at" | awk '{print $1}')
+                # Convert creation date to epoch time format
+                created_date_epoch=$(date -d "$formatted_date" +%s 2>/dev/null)
+
+                if [ -z "$created_date_epoch" ]; then
+                    echo "Date parsing failed for image $repo:$tag"
+                    continue
+                fi
+
+                # Calculate age in days
+                age_days=$(( (current_date_epoch - created_date_epoch) / 86400 ))
+
+                if [ "$age_days" -ge "$DAYS_OLD" ]; then
+                  echo "$id - $repo:$tag is $age_days days old and will be deleted"
+                  echo "REMOVE_LIST DEBUG1 ====${REMOVE_LIST}==="
+                  REMOVE_LIST="${REMOVE_LIST} $id"
+                  echo "REMOVE_LIST DEBUG2 ====${REMOVE_LIST}==="
+                fi
+            done
+            echo "Deleting old Docker images..."
+            echo "REMOVE_LIST ----------------FINAL------------ ====${REMOVE_LIST}==="
+            sudo docker image rm -f $REMOVE_LIST
+          '''
         }
-      }
+      } //steps
     }
 
 
