@@ -192,50 +192,6 @@ pipeline {
     }
 
 
-    stage('Connect to Kubernetes cluster using kubeconfig and verify by listing nodes and pods') {
-      steps {
-        script {
-          PrintStageName()
-          // Using kubeconfig
-          withCredentials([file(credentialsId: 'cred-kubernetes-config-file', variable: 'KUBECONFIG')]) {
-            //When the pipeline reaches this withCredentials block, Jenkins:
-            //Creates a temporary file on the Jenkins agent where the pipeline is running.
-            //Writes the contents of the kubeconfig file to this temporary file.
-            //Assigns the full path of this temporary file to the environment variable, KUBECONFIG in this case
-            //Inside the sh step (or any other step within the withCredentials block), the environment variable KUBECONFIG is available
-            //and points to the temporary kubeconfig file. This allows tools like kubectl to look up resources
-            sh """
-            kubectl get nodes -o wide
-            kubectl get pods -o wide
-            """
-          }
-        }
-      }
-    }
-
-
-    stage('Checkout Code from git PRIVATE repo on github.com')  {
-      steps {
-        PrintStageName()
-        script {
-          try {
-            // Use Jenkins credentials to access the repository
-            withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
-              echo "VAR_USER: ${env.VAR_USER}"
-              echo "VAR_PAT: ${env.VAR_PAT}"
-              //below is not going to work as this variable is the complete URL itself, so will need to change the variable if we want to use it
-              //git branch: env.APP_GIT_REPO_BRANCH, url: "https://${VAR_USER}:${VAR_PAT}@${env.APP_GIT_REPO_URL}"
-              git( branch: 'main', credentialsId: "cred-github-fedora800-PAT", url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git")
-            }
-          }  catch (Exception e) {
-            echo "An error occurred: ${e.message}"
-            // Fail the stage and stop the pipeline
-            error("Stopping pipeline due to error in this stage.")
-          }
-        }
-      }
-    }
-
 
     stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {  // NOT-TESTED
       steps {
