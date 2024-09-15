@@ -163,35 +163,6 @@ pipeline {
   }
 
 
-  stage('Run Docker Container') {
-          steps {
-              script {
-                  PrintStageName()
-                  try {
-                      // Stop and remove any existing container with the same name
-                      sh """
-                          if [ \$(sudo docker container ls -a -f name=${env.APP_NAME} -q) ]; then
-                              sudo docker stop ${env.APP_NAME}
-                              sudo docker rm -f ${env.APP_NAME}
-                          fi
-                      """
-
-//                        // Run the Docker container
-//                        sh """
-//                           sudo docker run -d --name ${env.APP_NAME} \
-//                           --publish ${DOCKER_PUBLISHED_PORT}:${DOCKER_CONTAINER_PORT} ${DOCKERHUB_USERNAME}/${APP_NAME}:${DOCKER_IMAGE_TAG_2} \
-//                           ${env.APP_NAME} 
-//                        """
-//                        // sudo docker run -d --name stocksanalyzer-frontend-app --publish 80:8501 fedora800/stocksanalyzer-frontend-app:latest stocksanalyzer-frontend-app
-                  } catch (Exception e) {
-                      echo "Failed to run Docker container: ${e}"
-                      currentBuild.result = 'FAILURE'
-                  }
-              }
-          }
-    }
-
-
 
     stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {  // NOT-TESTED
       steps {
