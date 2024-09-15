@@ -12,13 +12,21 @@ pipeline {
     agent any
     
   environment {
+
+    GIT_USER_NAME = "fedora800"
+
+    APP_GIT_REPO_NAME = "stocksanalyzer-system"
     APP_GIT_REPO_URL = "https://github.com/fedora800/stocksanalyzer-system.git"
     APP_GIT_REPO_BRANCH = "main"
-    APP_GIT_REPO_CREDENTIALS_ID = "cred-github-fedora800-PAT"
+    APP_GIT_CREDENTIALS_ID = "cred-github-fedora800-PAT"
 
-    APP_GITOPS_REPO_URL = 'https://github.com/your-username/gitops-stocksanalyzer-system.git' 
+    APP_GITOPS_REPO_NAME = "gitops-stocksanalyzer-system"
+    APP_GITOPS_REPO_URL = 'https://github.com/fedora800/gitops-stocksanalyzer-system.git' 
     APP_GITOPS_BRANCH = 'main'
     APP_GITOPS_CREDENTIALS_ID = 'cred-github-fedora800-PAT'
+
+    DEPLOYMENT_YAML_FILE = 'kubernetes-manifests/frontend/dpl-frontend.yaml'
+    SERVICE_YAML_FILE = 'kubernetes-manifests/frontend/svc-frontend.yaml'
 
 
 
@@ -67,7 +75,7 @@ pipeline {
           try {
             // Pull code from a GitHub repository
             //git branch: 'main', url: 'https://github.com/fedora800/scratch_project.git'
-            git branch: APP_GIT_REPO_BRANCH, credentialsId: APP_GIT_REPO_CREDENTIALS_ID, url: APP_GIT_REPO_URL
+            git branch: APP_GIT_REPO_BRANCH, credentialsId: APP_GIT_CREDENTIALS_ID, url: APP_GIT_REPO_URL
           }
           catch (err) {
             echo err
@@ -100,7 +108,6 @@ pipeline {
       }
     }
 */
-
 
     stage('Build Python Code - Frontend') {
       steps {
@@ -163,110 +170,76 @@ pipeline {
   }
 
 
-
-    stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {  // NOT-TESTED
-      steps {
-        script {
-          PrintStageName()
-          // Clone the GitOps repository
+  stage('Clone GitOps Repo and push manifest file changes to this GitOps Repo') {
+    steps {
+      PrintStageName()
+      script {
+        try {
+        // Clone the GitOps repository
           echo 'Cloning the GitOps repository...'
-          withCredentials([usernamePassword(credentialsId: "cred-github-fedora800-PAT", passwordVariable: 'VAR_PAT', usernameVariable: 'VAR_USER')]) {
-          // use the Git URL without credentials. they are still passed securely using the credentialsId parameter. Jenkins will handle authentication securely using its internal mechanisms (GIT_ASKPASS). This avoids insecure Groovy string interpolation while still providing the necessary credentials.
-            git branch: 'main', credentialsId: "cred-github-fedora800-PAT", url: "https://github.com/fedora800/gitops-stocksanalyzer-system.git"
-          }
+          dir(env.APP_GITOPS_REPO_NAME) {
+            withCredentials([usernamePassword(credentialsId: env.APP_GITOPS_CREDENTIALS_ID, usernameVariable: 'VAR_USER', passwordVariable: 'VAR_PAT')]) {
+            // Use Jenkins git step to clone the repository securely
+            // use the Git URL without credentials. they are still passed securely using the credentialsId parameter. 
+            // Jenkins will handle authentication securely using its internal mechanisms (GIT_ASKPASS). 
+            // This avoids insecure Groovy string interpolation while still providing the necessary credentials.
+              echo "User extracted from Jenkins credentials ${env.APP_GITOPS_CREDENTIALS_ID} : ${env.VAR_USER}"
+              echo "PAT (personal access token) extracted from Jenkins credentials ${env.APP_GITOPS_CREDENTIALS_ID} : ${env.VAR_PAT}"
+              //git(branch: 'main', credentialsId: env.APP_GITOPS_CREDENTIALS, url: "https://${VAR_USER}:${VAR_PAT}@github.com/fedora800/stocksanalyzer-system.git")
+              git(branch: env.APP_GITOPS_BRANCH, credentialsId: env.APP_GITOPS_CREDENTIALS_ID, url: "https://github.com/fedora800/${env.APP_GITOPS_REPO_NAME}.git")
+ 
+              print 'username=' + VAR_USER 
+              print 'password=' + VAR_PAT
+              print 'username.collect { it } = ' + VAR_USER.collect { it }      // will print username.collect { it } = [f, e, d, o, r, a, 8, 0, 0]
+              print 'password.collect { it } = ' + VAR_PAT.collect { it }
 
-/*
-          sh """
-          git clone -b ${APP_GITOPS_BRANCH} https://${env.APP_GITOPS_REPO_URL} gitops-repo
-          cd gitops-repo
-          """
-*/
-          // Update requisite YAML files 
-          // Must use Groovy string interpolation (${}) inside a double-quoted Groovy string (""").
-          echo 'Updating YAML files...'
-          sh """
-          echo "Now updating kubernetes-manifests/frontend/dpl-frontend.yaml"
-          cd kubernetes-manifests/frontend
-          pwd
-          ls -l
-          echo "Before image change :"
-          grep "image: " dpl-frontend.yaml
-          echo "env.BUILD_NUMBER  = ${env.BUILD_NUMBER}"
-          sed -i "s#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${env.BUILD_NUMBER}#g" dpl-frontend.yaml
-          echo "After image change :"
-          grep "image: " dpl-frontend.yaml
-          """
-//                    def buildNumber = env.BUILD_NUMBER
-//                    sh "sed -i 's#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:1.0.${buildNumber}#g' dpl-frontend.yaml"
+              def truncatedPAT = env.VAR_PAT.take(4)  // Take first 4 characters
 
+              // Update requisite YAML files 
+              echo '-------------------Updating YAML files... ---------------------------'
+              sh """
+              echo "User extracted from Jenkins credentials ${env.APP_GITOPS_CREDENTIALS_ID} : ${env.VAR_USER}"
+              echo "PAT (personal access token) extracted from Jenkins credentials ${env.APP_GITOPS_CREDENTIALS_ID} : ${env.VAR_PAT}"
+              echo "truncatedPAT : ${env.truncatedPAT}"
+              pwd
+              ls -lR
+              #cd kubernetes-manifests/frontend
+              echo "Before image change :"
+              grep "image: " ${env.DEPLOYMENT_YAML_FILE}
+              grep "pl-version: " ${env.DEPLOYMENT_YAML_FILE}
+              grep "pl-version: " ${env.SERVICE_YAML_FILE}
+              echo "Now updating requisite manifest files ..."
+              sed -i "s#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
+              sed -i "s#image: .*stocksanalyzer-frontend-app.*#pl-version: ${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
+              sed -i "s#image: .*stocksanalyzer-frontend-app.*#pl-version: ${env.APP_VERSION}#g" ${env.SERVICE_YAML_FILE}
+              echo "After image change :"
+              grep "image: " ${env.DEPLOYMENT_YAML_FILE}
+              grep "pl-version: " ${env.DEPLOYMENT_YAML_FILE}
+              grep "pl-version: " ${env.SERVICE_YAML_FILE}
+              """
+    
+              // Commit and push the changes back to the GitOps repo
+              echo 'Committing and pushing changes to GitOps repository...'
+              sh """
+              git config user.name "Jenkins"
+              git config user.email "jenkins@example.com"
+              git add ${env.DEPLOYMENT_YAML_FILE}
+              git commit -m "Jenkins CI - ${env.JOB_NAME} - Update deployment image for ${env.APP_NAME} to version ${env.APP_VERSION}"
+              git remote -v
+              git push https://${env.VAR_USER}:${env.VAR_PAT}@github.com/${env.GIT_USER_NAME}/${env.APP_GITOPS_REPO_NAME}.git ${env.APP_GITOPS_BRANCH}
+              git log --pretty=format:'%h %ad %s    %D' --date=local -5
+              """
+            } //with
 
-/*
-          // Commit and push the changes back to the GitOps repo
-          echo 'Committing and pushing changes to GitOps repository...'
-          sh """
-          cd gitops-repo
-          git config user.name "Jenkins"
-          git config user.email "jenkins@example.com"
-          git add .
-          git commit -m "Update deployment YAML with build ${BUILD_NUMBER}"
-          git push https://${env.APP_GITOPS_CREDENTIALS_ID}@${APP_GITOPS_REPO_URL} ${APP_GITOPS_BRANCH}
-          """
-*/
-        }
-      }
-    }
-
-
-    stage('Cleaning up old Docker images')  {    // CURRENTLY, its not printing FINAL REMOVE_LIST, though that variable is getting done properly in loop
-      steps {
-        // Clean up temporary files, containers, etc.
-        echo 'Cleaning up...'
-
-        script {
-          PrintStageName()  
-  
-          // This will remove all dangling images (images with no tags)
-          sh "sudo docker image prune -f"
-  
-          // Remove specific images older than a specified number of days
-          sh '''
-            DAYS_OLD=30
-
-            # Get current date in seconds since epoch
-            current_date=$(date +%F)
-
-            REMOVE_LIST=""
-            # Convert current date to epoch time format
-            current_date_epoch=$(date -d "$current_date" +%s)
-            # List images and filter based on creation date
-            sudo docker images --format "{{.ID}} {{.Repository}} {{.Tag}} {{.CreatedAt}}" | while read -r id repo tag created_at; do
-                # Extract date part from created_at and remove timezone info
-                formatted_date=$(echo "$created_at" | awk '{print $1}')
-                # Convert creation date to epoch time format
-                created_date_epoch=$(date -d "$formatted_date" +%s 2>/dev/null)
-
-                if [ -z "$created_date_epoch" ]; then
-                    echo "Date parsing failed for image $repo:$tag"
-                    continue
-                fi
-
-                # Calculate age in days
-                age_days=$(( (current_date_epoch - created_date_epoch) / 86400 ))
-
-                if [ "$age_days" -ge "$DAYS_OLD" ]; then
-                  echo "$id - $repo:$tag is $age_days days old and will be deleted"
-                  echo "REMOVE_LIST DEBUG1 ====${REMOVE_LIST}==="
-                  REMOVE_LIST="${REMOVE_LIST} $id"
-                  echo "REMOVE_LIST DEBUG2 ====${REMOVE_LIST}==="
-                fi
-            done
-            echo "Deleting old Docker images..."
-            echo "REMOVE_LIST ----------------FINAL------------ ====${REMOVE_LIST}==="
-            sudo docker image rm -f $REMOVE_LIST
-          '''
-        }
-      } //steps
-    }
+          } //dir
+        }  catch (Exception e) {
+          echo "An error occurred: ${e.message}"
+          // Fail the stage and stop the pipeline
+          error("Stopping pipeline due to error in this stage.")
+        } // try
+      } // script
+    } //steps
+  } //stage
 
 
   } // end-stages
