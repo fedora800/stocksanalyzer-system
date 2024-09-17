@@ -209,9 +209,9 @@ pipeline {
               grep "pl-version: " ${env.DEPLOYMENT_YAML_FILE}
               grep "pl-version: " ${env.SERVICE_YAML_FILE}
               echo "Now updating requisite manifest files ..."
-              sed -i "s#image: .*stocksanalyzer-frontend-app.*#image: fedora800/stocksanalyzer-frontend-app:${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
-              sed -i "s#image: .*stocksanalyzer-frontend-app.*#pl-version: ${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
-              sed -i "s#image: .*stocksanalyzer-frontend-app.*#pl-version: ${env.APP_VERSION}#g" ${env.SERVICE_YAML_FILE}
+              sed -i "s#pl-version: .*#pl-version: ${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
+              sed -i "s#image: .*#image: ${env.GIT_USER_NAME}/${env.APP_NAME}:${env.APP_VERSION}#g" ${env.DEPLOYMENT_YAML_FILE}
+              sed -i "s#pl-version: .*#pl-version: ${env.APP_VERSION}#g" ${env.SERVICE_YAML_FILE}
               echo "After image change :"
               grep "image: " ${env.DEPLOYMENT_YAML_FILE}
               grep "pl-version: " ${env.DEPLOYMENT_YAML_FILE}
@@ -223,8 +223,8 @@ pipeline {
               sh """
               git config user.name "Jenkins"
               git config user.email "jenkins@example.com"
-              git add ${env.DEPLOYMENT_YAML_FILE}
-              git commit -m "Jenkins CI - ${env.JOB_NAME} - Update deployment image for ${env.APP_NAME} to version ${env.APP_VERSION}"
+              git add ${env.DEPLOYMENT_YAML_FILE} ${env.SERVICE_YAML_FILE}
+              git commit -m "Jenkins CI - ${env.JOB_NAME} - Updated kubernetes manifest files for ${env.APP_NAME} with version ${env.APP_VERSION}"
               git remote -v
               git push https://${env.VAR_USER}:${env.VAR_PAT}@github.com/${env.GIT_USER_NAME}/${env.APP_GITOPS_REPO_NAME}.git ${env.APP_GITOPS_BRANCH}
               git log --pretty=format:'%h %ad %s    %D' --date=local -5
