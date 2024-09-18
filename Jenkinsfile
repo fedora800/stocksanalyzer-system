@@ -13,6 +13,7 @@ pipeline {
     
   environment {
 
+    WEBHOOK_SECRET_FOR_GITHUB = credentials('cred_jenkins_token_for_github') // Jenkins secret credential ID setup for this github webhook
     GIT_USER_NAME = "fedora800"
 
     APP_GIT_REPO_NAME = "stocksanalyzer-system"
@@ -27,6 +28,7 @@ pipeline {
 
     DEPLOYMENT_YAML_FILE = 'kubernetes-manifests/frontend/dpl-frontend.yaml'
     SERVICE_YAML_FILE = 'kubernetes-manifests/frontend/svc-frontend.yaml'
+
 
 
 
@@ -67,6 +69,22 @@ pipeline {
         }
     }
 
+
+    stage('Verify Webhook Secret') {
+      steps {
+        PrintStageName()
+        script {
+          // Assume the secret from GitHub is available as a parameter in the webhook payload 
+          def receivedSecret = params.cred_jenkins_token_for_github
+          // Compare payload receieved secret against our defined secret
+          if (receivedSecret == WEBHOOK_SECRET_FOR_GITHUB)  {
+            echo "Secret verified, proceeding with the pipeline"
+          } else {
+            error "Webhook secret verification failed"
+          }
+        }
+      }
+    }
 
     stage('Pull Code from git PUBLIC repo')  {
       steps {
