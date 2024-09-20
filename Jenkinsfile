@@ -13,7 +13,7 @@ pipeline {
     
   environment {
 
-    WEBHOOK_SECRET_FOR_GITHUB = credentials('cred_jenkins_token_for_github') // Jenkins secret credential ID setup for this github webhook
+    //WEBHOOK_SECRET_FOR_GITHUB = credentials('cred_jenkins_token_for_github') // Jenkins secret credential ID setup for this github webhook
     GIT_USER_NAME = "fedora800"
 
     APP_GIT_REPO_NAME = "stocksanalyzer-system"
@@ -70,6 +70,50 @@ pipeline {
     }
 
 
+    stage('Check Webhook Parameters') {
+      steps {
+        PrintStageName()
+          script {
+            echo "Received secret: ${params.cred_jenkins_token_for_github ?: 'Secret not provided'}"
+          }
+      }
+    }
+
+
+
+    stage('Print Webhook Payload') {
+      steps {
+        PrintStageName()
+        script {
+          echo "Webhook Payload Received:"
+            // Print all environment variables
+            sh 'env'
+            // If you want to print parameters as well, use this:
+            echo "Webhook Parameters:"
+            echo "${params}"
+        }
+      }
+    }
+
+
+
+
+    // Only proceed if the github webhook received by Jenkins was for my repository
+    stage('Check Git Webhook Repository name') {
+      steps {
+        PrintStageName()
+        script {
+          def repoName = env.GIT_URL.tokenize('/').last().replace('.git', '')
+          echo "env.GIT_URL = ${env.GIT_URL}"
+          echo "repoName = ${repoName}"
+          if (repoName != 'stocksanalyzer-system') {
+            error("This build is only for 'stocksanalyzer-system'. Current repository: ${repoName}")
+          }
+        }
+      }
+    }
+
+/*
     stage('Verify Webhook Secret') {
       steps {
         PrintStageName()
@@ -85,6 +129,7 @@ pipeline {
         }
       }
     }
+*/
 
     stage('Pull Code from git PUBLIC repo')  {
       steps {
@@ -266,7 +311,7 @@ pipeline {
       always {
           // Always run steps after the pipeline completes
           echo 'Pipeline finished.'
-          cleanWs() // Clean workspace
+          //cleanWs() // Clean workspace
       }
       success {
           // Run steps after a successful build
