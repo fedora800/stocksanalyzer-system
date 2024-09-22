@@ -1,15 +1,5 @@
-//-------------------- section : Functions --------------------
-
-// function to print the stage name more clearly in the jenkins console output, can be called within each stage
-def PrintStageName() {
-  def currentTime = sh(script: "date +'%T'", returnStdout: true).trim()
-  // Print the stage name and current time
-  echo "-----------------STAGE: ${env.STAGE_NAME ?: 'Unknown Stage'}-----------------${currentTime}---------"
-}
-
-
 pipeline {
-    agent any
+  agent any
     
   environment {
 
@@ -30,6 +20,11 @@ pipeline {
     SERVICE_YAML_FILE = 'kubernetes-manifests/frontend/svc-frontend.yaml'
 
 
+    REPO_URL = "${env.repo_url}"
+    REF = "${env.ref}"
+    BRANCH = REF.replaceAll('^refs/heads/', '')
+    RELEASE = BRANCH.replaceAll('^.*/', '')
+    VERSION = RELEASE.replaceAll('^v', '')
 
 
       APP_NAME = "stocksanalyzer-frontend-app"
@@ -46,6 +41,17 @@ pipeline {
 
     }
     
+/*
+  parameters {
+    // this is supposed to avoid errors like below in /var/log/syslog or jenkins log when using the Generic WebHook Trigger plugin
+    // Sep 23 09:30:16 acg-control1 jenkins[455]: 2024-09-23 09:30:16.778+0000 [id=216]#011WARNING#011hudson.model.ParametersAction#filter: Skipped parameter `jenkins-generic-webhook-trigger-plugin_uuid` as it is undefined on `test-pipeline` (#23). Set `-Dhudson.model.ParametersAction.keepUndefinedParameters=true` to allow undefined parameters to be injected as environment variables or `-Dhudson.model.ParametersAction.safeParameters=[comma-separated list]` to whitelist specific parameter names, even though it represents a security breach or `-Dhudson.model.ParametersAction.keepUndefinedParameters=false` to no longer show this message.
+    string(name: 'jenkins-generic-webhook-trigger-plugin_uuid', defaultValue: '', description: 'UUID from the Generic Webhook Trigger plugin')
+    // Parameters for the webhook payload (simulate payload if testing)
+    string(name: 'param-payload', defaultValue: '', description: 'Webhook payload from GitHub')
+  }
+*/
+
+
   stages {
 
     stage('Initialization') {
@@ -69,67 +75,75 @@ pipeline {
         }
     }
 
-
-    stage('Check Webhook Parameters') {
+    stage('Print GitHub Webhook Headers') {
       steps {
         PrintStageName()
           script {
-            echo "Received secret: ${params.cred_jenkins_token_for_github ?: 'Secret not provided'}"
+            // NOTE - each of these need to be individually set up on the Jenkins GUI under the "Header parameters" section
+            // and the naming convention should be exactly like below example:
+            // The "X-GitHub-Delivery" header should be set as Request Header = "x-github-delivery" and leave Value filter blank and here env.x_github_delivery.
+            // these are a pain, capitals, hyphen and underscore variable names, so do exactly as done here and in GUI.
+
+            def gitHubDelivery = env.x_github_delivery ?: 'Not available'
+            def gitHubEvent = env.x_github_event ?: 'Not available'
+            def githubHookId = env.x_github_hook_id ?: 'Not available'
+            def gitHubInstallationTargetID = env.x_github_hook_installation_target_id ?: 'Not available'
+            def gitHubInstallationTargetType = env.x_github_hook_installation_target_type ?: 'Not available'
+
+            echo "X-GitHub-Delivery : ${gitHubDelivery}"
+            echo "X-GitHub-Event : ${gitHubEvent}"
+            echo "X-GitHub-Hook-ID : ${githubHookId}"
+            echo "X-GitHub-Hook-Installation-Target-ID : ${gitHubInstallationTargetID}"
+            echo "X-GitHub-Hook-Installation-Target-Type : ${gitHubInstallationTargetType}"
+
+            //def headers = env.GENERIC_WEBHOOK_TRIGGER_HEADERS ?: 'No Headers Found'
+            //echo "Webhook Headers: ${headers}"
+
+            // env shows some interesting variables, need to check out later
+            echo "-----------env print --- start ----"
+            //sh 'env | sort'                           // too many rows, so for now just show top and bottom of it
+            sh 'env > /tmp/env.txt'
+            echo "shortened env list :"
+            sh '(head -n 5; echo "..."; tail -n 5) < /tmp/env.txt'
+
+            // NOTE: here i can see all the payload data nicely put into individual env variables with prefix of webhook_payload_
+            // eg webhook_payload_ref=refs/heads/main
+            //    webhook_payload_repository_git_url=git://github.com/fedora800/stocksanalyzer-system.git
+            // and of course the whole json in webhook_payload which i am printing in the captureRawPayload_method_2 function
+            echo "-----------env print --- end ----"
+            // Store some values for use in the next section
+            env.GITHUB_HOOK_TARGETID = gitHubInstallationTargetID
+
           }
       }
     }
 
+    stage('Process Payload Received on the GitHub Webhook') {
+            // NOTE - just the Payload, the HEADERS need to be processed differently
+            steps {
+                PrintStageName()
+                script {
+//def payload = env.GENERIC_WEBHOOK_TRIGGER_REQUEST_BODY ?: 'No Payload Found'
+//echo "Webhook Payload: ${payload}"
 
-
-    stage('Print Webhook Payload') {
-      steps {
-        PrintStageName()
-        script {
-          echo "Webhook Payload Received:"
-            // Print all environment variables
-            sh 'env'
-            // If you want to print parameters as well, use this:
-            echo "Webhook Parameters:"
-            echo "${params}"
-        }
-      }
+                    try {
+                        echo "-- Calling captureRawPayload_method_1()  --"
+                        captureRawPayload_method_1()
+                        echo "-- Calling captureRawPayload_method_2()  --"
+                        // A variable called webhook_payload is configured on Jenkins under "Post content parameters"  with Expression = $ and JSONPATH option.
+                        captureRawPayload_method_2()
+                        echo "-- Calling extractWebhookInfo()  --"
+                        extractWebhookInfo()
+                        echo "-- Calling createBuildIdentifier()  --"
+                        createBuildIdentifier()
+                    } catch (Exception e) {
+                        echo "Error processing webhook: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
     }
 
-
-
-
-    // Only proceed if the github webhook received by Jenkins was for my repository
-    stage('Check Git Webhook Repository name') {
-      steps {
-        PrintStageName()
-        script {
-          def repoName = env.GIT_URL.tokenize('/').last().replace('.git', '')
-          echo "env.GIT_URL = ${env.GIT_URL}"
-          echo "repoName = ${repoName}"
-          if (repoName != 'stocksanalyzer-system') {
-            error("This build is only for 'stocksanalyzer-system'. Current repository: ${repoName}")
-          }
-        }
-      }
-    }
-
-/*
-    stage('Verify Webhook Secret') {
-      steps {
-        PrintStageName()
-        script {
-          // Assume the secret from GitHub is available as a parameter in the webhook payload 
-          def receivedSecret = params.cred_jenkins_token_for_github
-          // Compare payload receieved secret against our defined secret
-          if (receivedSecret == WEBHOOK_SECRET_FOR_GITHUB)  {
-            echo "Secret verified, proceeding with the pipeline"
-          } else {
-            error "Webhook secret verification failed"
-          }
-        }
-      }
-    }
-*/
 
     stage('Pull Code from git PUBLIC repo')  {
       steps {
@@ -327,4 +341,113 @@ pipeline {
 } // end-pipeline
 
 
+
+//-------------------- section : Functions --------------------
+
+// function to print the stage name more clearly in the jenkins console output, can be called within each stage
+def PrintStageName() {
+  def currentTime = sh(script: "date +'%T'", returnStdout: true).trim()
+  // Print the stage name and current time
+  echo "-----------------STAGE: ${env.STAGE_NAME ?: 'Unknown Stage'}-----------------${currentTime}---------"
+}
+
+def captureRawPayload_method_1() {
+
+  // When a webhook is received by Jenkins, the Generic Webhook Trigger Plugin intercepts it.
+  // The plugin extracts the raw body of the POST request.
+  // It then sets this body as the value of the GENERIC_WEBHOOK_TRIGGER_REQUEST_BODY environment variable.
+  // This environment variable is then available for use in the Jenkins pipeline script.
+
+  // Capture the raw payload
+  def rawPayload = env.GENERIC_WEBHOOK_TRIGGER_REQUEST_BODY ?: '{}'      // **** THIS DOES NOT CAPTURE IT, so not working, sets to {}  ****, but env has it, check there
+  // Save the payload to a file in the workspace
+  writeFile file: 'webhook_payload-X.json', text: rawPayload
+  // Print the file path and contents
+  echo "Raw payload saved to: ${env.WORKSPACE}/webhook_payload-X.json"
+  sh '''
+  ls -l webhook_payload-X.json
+  cat webhook_payload-X.json
+  '''
+
+}
+
+def captureRawPayload_method_2() {
+
+  // Print the entire payload data that was picked by the Generic Webhook Trigger Plugin 
+  // A variable webhook_payload is configured on Jenkins under "Post content parameters"  with Expression = $ and JSONPATH option.
+  // echo "webhook_payload = ${env.webhook_payload}"    // WORKS, but prints the huge json, so commented out for now
+
+/*
+Post content parameters
+Name of variable = webhook_payload
+Expression = $
+JSONPATH
+above expression means we want all the fields from the the payload put into this webhook_payload environment variable.
+
+If we want the Header from the github webhook invocation, eg below - 
+X-GitHub-Hook-Installation-Target-Type: repository
+Go to "Header parameters" and add Request header = X-GitHub-Hook-Installation-Target-Type and leave Value filter blank
+*/
+
+  // Write the JSON content from the env variable to a file
+  writeFile file: 'webhook_payload.json', text: "${env.webhook_payload}"
+
+  // Optional: Print the content to verify
+  sh '''
+  pwd
+  ls -l webhook_payload.json
+  cat webhook_payload.json | cut -c1-1000
+  '''
+}
+
+
+def extractWebhookInfo() {
+
+    // Parse the JSON formatted file into a json type of variable
+    def jsonPayload = readJSON text: "${env.webhook_payload}"           // from the env variable
+    //def jsonPayload = readJSON file: 'webhook_payload.json'             // from the saved file
+
+    // html_url and git_url fields are typically part of the repository object, not at the root level of the payload
+    def htmlUrl       = jsonPayload.repository?.html_url ?: 'Unknown'
+    def gitUrl        = jsonPayload.repository?.git_url ?: 'Unknown'
+    def repoName      = jsonPayload.repository.full_name ?: 'Unknown'
+    def ref           = jsonPayload.ref ?: 'Unknown'
+    def branchName    = jsonPayload.ref ? jsonPayload.ref.split('/')[-1] : 'Unknown'
+    def commitId      = jsonPayload.after ?: 'Unknown'
+    def commitMessage = jsonPayload.head_commit?.message ?: 'Unknown'
+    def pusherName    = jsonPayload.pusher?.name ?: 'Unknown'
+    echo "Printing main fields received on the GitHub webhook payload for build #${env.BUILD_NUMBER}"
+    echo "HTML url: ${htmlUrl}"
+    echo "git url: ${gitUrl}"
+    echo "Repository: ${repoName}"
+    echo "Ref: ${ref}"
+    echo "Branch: ${branchName}"
+    echo "Commit ID: ${commitId}"
+    echo "Commit Message: ${commitMessage}"
+    echo "Pushed by: ${pusherName}"
+    // Store some values for use in the next section
+    env.REPO_NAME = repoName
+    env.COMMIT_ID = commitId
+    
+    // Construct a link between the webhook and the Jenkins build
+    def buildLink = "${repoName} commit ${commitId} webhook InstallationTargetID ${GITHUB_HOOK_TARGETID} fired Jenkins Build #${env.BUILD_NUMBER}"
+    echo "Link: ${buildLink}"
+
+
+}
+
+
+def createBuildIdentifier() {
+    def githubDeliveryId = env.HTTP_X_GITHUB_DELIVERY ?: 'Unknown'
+    echo "GitHub Delivery ID: ${githubDeliveryId}"
+    // Create a unique identifier linking GitHub webhook to Jenkins build
+    def linkIdentifier = "${env.BUILD_NUMBER}-${githubDeliveryId}"
+    echo "Unique Build Identifier: ${linkIdentifier}"
+    // Set this as a build parameter for future reference
+    env.GITHUB_JENKINS_LINK = linkIdentifier
+    // Additional logging with stored values from previous section
+    echo "This build (#${env.BUILD_NUMBER}) is for repository ${env.REPO_NAME}, commit ${env.COMMIT_ID}"
+    // Log the Generic Webhook Trigger UUID
+    echo "Generic Webhook Trigger UUID: ${params['jenkins-generic-webhook-trigger-plugin_uuid']}"
+}
 
