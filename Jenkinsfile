@@ -403,36 +403,43 @@ Go to "Header parameters" and add Request header = X-GitHub-Hook-Installation-Ta
 
 def extractWebhookInfo() {
 
-    // Parse the JSON formatted file into a json type of variable
-    def jsonPayload = readJSON text: "${env.webhook_payload}"           // from the env variable
-    //def jsonPayload = readJSON file: 'webhook_payload.json'             // from the saved file
+    echo "🔍 Checking webhook_payload: ${env.webhook_payload ?: 'Not Found'}"
 
-    // html_url and git_url fields are typically part of the repository object, not at the root level of the payload
-    def htmlUrl       = jsonPayload.repository?.html_url ?: 'Unknown'
-    def gitUrl        = jsonPayload.repository?.git_url ?: 'Unknown'
-    def repoName      = jsonPayload.repository.full_name ?: 'Unknown'
-    def ref           = jsonPayload.ref ?: 'Unknown'
-    def branchName    = jsonPayload.ref ? jsonPayload.ref.split('/')[-1] : 'Unknown'
-    def commitId      = jsonPayload.after ?: 'Unknown'
-    def commitMessage = jsonPayload.head_commit?.message ?: 'Unknown'
-    def pusherName    = jsonPayload.pusher?.name ?: 'Unknown'
-    echo "Printing main fields received on the GitHub webhook payload for build #${env.BUILD_NUMBER}"
-    echo "HTML url: ${htmlUrl}"
-    echo "git url: ${gitUrl}"
-    echo "Repository: ${repoName}"
-    echo "Ref: ${ref}"
-    echo "Branch: ${branchName}"
-    echo "Commit ID: ${commitId}"
-    echo "Commit Message: ${commitMessage}"
-    echo "Pushed by: ${pusherName}"
-    // Store some values for use in the next section
-    env.REPO_NAME = repoName
-    env.COMMIT_ID = commitId
-    
-    // Construct a link between the webhook and the Jenkins build
-    def buildLink = "${repoName} commit ${commitId} webhook InstallationTargetID ${GITHUB_HOOK_TARGETID} fired Jenkins Build #${env.BUILD_NUMBER}"
-    echo "Link: ${buildLink}"
+    if (!env.webhook_payload) {
+        error "❌ ERROR: webhook_payload is missing! Make sure it is configured in Jenkins."
+    }
 
+    try {
+      // Parse the JSON formatted file into a json type of variable
+      def jsonPayload = readJSON text: "${env.webhook_payload}"           // from the env variable
+      //def jsonPayload = readJSON file: 'webhook_payload.json'             // from the saved file
+  
+      // html_url and git_url fields are typically part of the repository object, not at the root level of the payload
+      def htmlUrl       = jsonPayload.repository?.html_url ?: 'Unknown'
+      def gitUrl        = jsonPayload.repository?.git_url ?: 'Unknown'
+      def repoName      = jsonPayload.repository.full_name ?: 'Unknown'
+      def ref           = jsonPayload.ref ?: 'Unknown'
+      def branchName    = jsonPayload.ref ? jsonPayload.ref.split('/')[-1] : 'Unknown'
+      def commitId      = jsonPayload.after ?: 'Unknown'
+      def commitMessage = jsonPayload.head_commit?.message ?: 'Unknown'
+      def pusherName    = jsonPayload.pusher?.name ?: 'Unknown'
+      echo "Printing main fields received on the GitHub webhook payload for build #${env.BUILD_NUMBER}"
+      echo "HTML url: ${htmlUrl}"
+      echo "git url: ${gitUrl}"
+      echo "Repository: ${repoName}"
+      echo "Ref: ${ref}"
+      echo "Branch: ${branchName}"
+      echo "Commit ID: ${commitId}"
+      echo "Commit Message: ${commitMessage}"
+      echo "Pushed by: ${pusherName}"
+      // Store some values for use in the next section
+      env.REPO_NAME = repoName
+      env.COMMIT_ID = commitId
+      
+      // Construct a link between the webhook and the Jenkins build
+      def buildLink = "${repoName} commit ${commitId} webhook InstallationTargetID ${GITHUB_HOOK_TARGETID} fired Jenkins Build #${env.BUILD_NUMBER}"
+      echo "Link: ${buildLink}"
+    }
 
 }
 
