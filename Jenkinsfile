@@ -75,13 +75,15 @@ pipeline {
         }
     }
 
+    // Github Webhook "Request" has 2 parts. Headers and Payload.
+    // Below are the 2 stages to process those seperately.
     stage('Print GitHub Webhook Headers') {
       steps {
         PrintStageName()
           script {
-            // NOTE - each of these need to be individually set up on the Jenkins GUI under the "Header parameters" section
+            // NOTE - EACH of below 5 variables need to be individually set up on the Jenkins GUI under the "Header parameters" section
             // and the naming convention should be exactly like below example:
-            // The "X-GitHub-Delivery" header should be set as Request Header = "x-github-delivery" and leave Value filter blank and here env.x_github_delivery.
+            // The "X-GitHub-Delivery" header should be set as Request Header = "x-github-delivery" and leave Value filter blank and in here utilized as env.x_github_delivery.
             // these are a pain, capitals, hyphen and underscore variable names, so do exactly as done here and in GUI.
 
             def gitHubDelivery = env.x_github_delivery ?: 'Not available'
@@ -411,6 +413,7 @@ def extractWebhookInfo() {
 
     try {
       // Parse the JSON formatted file into a json type of variable
+      // Needs the "Pipeline Utility Steps" Plugin
       def jsonPayload = readJSON text: "${env.webhook_payload}"           // from the env variable
       //def jsonPayload = readJSON file: 'webhook_payload.json'             // from the saved file
   
@@ -439,6 +442,8 @@ def extractWebhookInfo() {
       // Construct a link between the webhook and the Jenkins build
       def buildLink = "${repoName} commit ${commitId} webhook InstallationTargetID ${GITHUB_HOOK_TARGETID} fired Jenkins Build #${env.BUILD_NUMBER}"
       echo "Link: ${buildLink}"
+    } catch (Exception e) {
+        error "❌ ERROR: Failed to parse webhook payload. ${e.message}"
     }
 
 }
