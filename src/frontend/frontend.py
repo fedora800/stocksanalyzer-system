@@ -30,7 +30,6 @@ def main():
 
     fn_detect_runtime_env()
 
-
     dataset_1 = [
       {'Symbol': 'AA', 'Description': 'Alcoa Corp', 'Last Price': 55.23},
       {'Symbol': 'AAAP', 'Description': 'Advanced Accelerator Applications S.A.', 'Last Price': 95.45},
@@ -38,10 +37,8 @@ def main():
       {'Symbol': 'AAC', 'Description': 'AAC Holdings Inc.', 'Last Price': 8.35},
       {'Symbol': 'AAN', 'Description': 'Aaron\'s Inc.', 'Last Price': 63.45}
     ]
-
     df_1 = pd.DataFrame(dataset_1)
     print(df_1)
-
 
     dataset_2 = [
       {'Symbol': 'AAPL', 'Description': 'Apple Inc.', 'Last Price': 543.21},
@@ -55,12 +52,20 @@ def main():
       {'Symbol': 'PEP', 'Description': 'PepsiCo, Inc.', 'Last Price': 521.11},
       {'Symbol': 'V', 'Description': 'Visa Inc. Class A', 'Last Price': 513.99}
     ]
-
-
     df_2 = pd.DataFrame(dataset_2)
     print(df_2)
 
-    df_dropdown_list = ["Symbols beginning with AA", "Symbols with prices greater than 500", "option3"]
+    dataset_3 = [
+      {'Symbol': 'F', 'Description': 'Ford Motor Company', 'Last Price': 9.70},
+      {'Symbol': 'AES', 'Description': 'The AES Corporation', 'Last Price': 12.60},
+      {'Symbol': 'HST', 'Description': 'Host Hotels & Resorts Inc.', 'Last Price': 14.37}
+    ]
+    df_3 = pd.DataFrame(dataset_3)
+    print(df_3)
+
+
+
+    df_dropdown_list = ["Symbols beginning with AA", "Symbols with prices greater than 500", "Symbols with prices less than 20"]
     sb_dropdown_chosen_option = st.selectbox(
       "My DropDown List",
       df_dropdown_list,
@@ -73,6 +78,8 @@ def main():
       st.write(df_1)
     elif sb_dropdown_chosen_option == "Symbols with prices greater than 500":
       st.write(df_2)
+    elif sb_dropdown_chosen_option == "Symbols with prices less than 20":
+      st.write(df_3)
 
     st.stop()
 
